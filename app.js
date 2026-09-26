@@ -157,7 +157,7 @@
     const tileX = Math.floor(x);
     const tileY = Math.floor(y);
     let px = Math.floor((x - tileX) * tileSize);
-    const py = Math.floor((y - tileY) * tileSize);
+    let py = Math.floor((y - tileY) * tileSize);
     if (px >= tileSize) px = tileSize - 1;
     if (py >= tileSize) py = tileSize - 1;
     if (px < 0) px = 0;
