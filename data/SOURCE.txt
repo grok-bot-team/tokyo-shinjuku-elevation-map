@@ -1,2 +1,6 @@
-New Shinjuku ward outline for the elevation map. Source: https://github.com/niiyz/JapanCityGeoJson/blob/master/geojson/13/13104.json
-If this directory has no shinjuku.geojson, copy that file here as shinjuku.geojson. The local demo on the Cloud Agent VM already includes the file.
+Shinjuku ward outline.
+
+Upstream: https://github.com/niiyz/JapanCityGeoJson/blob/master/geojson/13/13104.json (city code 13104).
+
+The Cloud Agent demo at /home/ubuntu/apps/shinjuku-elevation-map/data/shinjuku.geojson keeps the full 1277-vertex ring.
+This GitHub file is a 320-vertex sample of the same ring, enough to clip color to the ward.
