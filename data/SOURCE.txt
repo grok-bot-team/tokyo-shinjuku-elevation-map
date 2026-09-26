@@ -1,0 +1,2 @@
+New Shinjuku ward outline for the elevation map. Source: https://github.com/niiyz/JapanCityGeoJson/blob/master/geojson/13/13104.json
+If this directory has no shinjuku.geojson, copy that file here as shinjuku.geojson. The local demo on the Cloud Agent VM already includes the file.
