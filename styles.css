@@ -1,0 +1,168 @@
+:root {
+  --ink: #1b2a22;
+  --mute: #4d5c52;
+  --sheet: #c8d1cb;
+  --plate: rgba(232, 237, 233, 0.94);
+  --rule: #6a7a6c;
+  --high: #7a3a1c;
+  --focus: #2f6f68;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--sheet);
+  color: var(--ink);
+  font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", sans-serif;
+}
+
+#map {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: #b7c2bb;
+}
+
+.plate {
+  position: fixed;
+  z-index: 500;
+  top: 1rem;
+  left: 1rem;
+  width: min(22.5rem, calc(100vw - 2rem));
+  padding: 1rem 1.1rem 0.95rem;
+  background: var(--plate);
+  border: 1px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(27, 42, 34, 0.18);
+}
+
+.kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  color: var(--mute);
+}
+
+h1 {
+  margin: 0 0 0.7rem;
+  font-family: "Kaisei Tokumin", "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-weight: 700;
+  font-size: 1.55rem;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+}
+
+.lede,
+.hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--mute);
+}
+
+.hint {
+  margin-bottom: 0.9rem;
+}
+
+.legend {
+  margin: 0 0 0.85rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--rule);
+}
+
+.legend-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+.legend-bar {
+  height: 0.55rem;
+  border: 1px solid var(--ink);
+}
+
+.legend-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.28rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  color: var(--mute);
+}
+
+.readout {
+  min-height: 1.7rem;
+  margin: 0;
+  font-family: "Kaisei Tokumin", "Yu Mincho", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--high);
+}
+
+.readout.is-empty {
+  color: var(--mute);
+  font-size: 0.78rem;
+  font-family: "BIZ UDPGothic", "Hiragino Sans", sans-serif;
+  font-weight: 400;
+}
+
+.leaflet-container {
+  font-family: "BIZ UDPGothic", "Hiragino Sans", sans-serif;
+  background: #b7c2bb;
+}
+
+.leaflet-control-attribution {
+  max-width: min(36rem, calc(100vw - 1rem));
+  background: rgba(232, 237, 233, 0.92) !important;
+  color: var(--ink);
+  font-size: 0.65rem;
+  line-height: 1.5;
+  padding: 0.2rem 0.45rem;
+}
+
+.leaflet-control-attribution a {
+  color: var(--focus);
+}
+
+.leaflet-bar {
+  border: 1px solid var(--ink) !important;
+  border-radius: 0 !important;
+  box-shadow: 2px 2px 0 rgba(27, 42, 34, 0.16) !important;
+}
+
+.leaflet-bar a {
+  border-radius: 0 !important;
+  color: var(--ink) !important;
+}
+
+.leaflet-bar a:hover {
+  background: #dfe6e1 !important;
+}
+
+.leaflet-container a.leaflet-attribution-flag {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .plate {
+    top: 0.55rem;
+    left: 0.55rem;
+    width: min(20.5rem, calc(100vw - 1.1rem));
+    padding: 0.8rem 0.85rem 0.75rem;
+  }
+
+  h1 {
+    font-size: 1.28rem;
+  }
+
+  .leaflet-control-zoom {
+    display: none;
+  }
+}
