@@ -8,13 +8,13 @@
 2. `python3 -m http.server 8765` を実行します。
 3. ブラウザで [http://127.0.0.1:8765](http://127.0.0.1:8765) を開きます。
 
-新宿区が画面に収まります。区内だけが標高色で塗られます。左上の掲示に凡例があります。地図の右下に国土地理院の出典があります。
+新宿区が画面に収まります。区内だけが標高色で塗られます。左上の掲示に凡例があります。地図の右下に国土地理院と国土数値情報の出典があります。
 
 `file://` では区界の GeoJSON を読めません。必ず上記の静的サーバー経由で開いてください。
 
 ## 標高を読む
 
-区内をクリックします。左上の掲示に、その地点の標高がメートルで出ます。
+区内をクリックします。左上の掲示に、その地点の標高がメートルで出ます。数値は 5 m DEM（`dem5a_png` ズーム 15）から読みます。表示の色は、いまのズームの標高タイルです。
 
 区の外をクリックすると「新宿区の外です」と出ます。その画素に標高が無いときは「標高データがありません」と出ます。
 
@@ -24,11 +24,13 @@
 
 この節は参照です。手順ではありません。
 
-地図の背景は国土地理院の淡色地図です。標高色は同院の標高タイル（PNG）をブラウザで復号し、5 m から 45 m の色帯に塗ったものです。ズーム 14 以下は `dem_png` をそのズームで使います。15 以上は `dem5a_png` のズーム 15 タイルを拡大します。区界は `data/shinjuku.geojson` に同梱した新宿区ポリゴンです。実行時に GitHub へ取りに行きません。
+地図の背景は国土地理院の淡色地図です。標高色は同院の標高タイル（PNG）をブラウザで復号し、5 m から 45 m の色帯に塗ったものです。ズーム 14 以下は `dem_png` をそのズームで使います。15 以上は `dem5a_png` のズーム 15 タイルを拡大します。区界は `data/shinjuku.geojson` に同掲した新宿区ポリゴンです。実行時に GitHub へ取りに行きません。Leaflet・フォントは unpkg と Google Fonts から読みます。
 
 出典：国土地理院, 地理院タイル, 標高タイル（基盤地図情報数値標高モデル）を加工して作成。
 
 - [地理院タイル一覧](https://maps.gsi.go.jp/development/ichiran.html)
-- [国土地理院コンテンツ利用規約](https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html)（測量法に基づく成果の基本測量成果、地理院タイルは PDL 1.0）
+- [国土地理院コンテンツ利用規約](https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html)（地理院タイルは PDL 1.0）
 
-区界 GeoJSON の上流は [niiyz/JapanCityGeoJson](https://github.com/niiyz/JapanCityGeoJson) の `geojson/13/13104.json` です。
+区界は国土数値情報（行政区域データ）（国土交通省）を加工して作成したものです。同掲ファイルの上流は [niiyz/JapanCityGeoJson](https://github.com/niiyz/JapanCityGeoJson) の `geojson/13/13104.json` です。
+
+- [国土数値情報 行政区域データ](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-v3_1.html)

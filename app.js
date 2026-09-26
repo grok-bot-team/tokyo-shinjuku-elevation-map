@@ -11,10 +11,11 @@
     ],
   };
 
-  const GSI_ATTR =
+  const MAP_ATTR =
     '<a href="https://maps.gsi.go.jp/development/ichiran.html">出典：国土地理院</a>, ' +
     '<a href="https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html">地理院タイル</a>, ' +
-    "標高タイル（基盤地図情報数値標高モデル）を加工して作成";
+    "標高タイル（基盤地図情報数値標高モデル）を加工して作成 | " +
+    '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-v3_1.html">国土数値情報（行政区域データ）</a>（国土交通省）を加工して作成';
 
   function decodeDemPixel(r, g, b) {
     const x = 65536 * r + 256 * g + b;
@@ -65,23 +66,39 @@
     return "linear-gradient(90deg, " + parts.join(", ") + ")";
   }
 
-  function demNativeZoom(z) {
-    return z >= 15 ? 15 : z;
+  function nativeTile(z, x, y) {
+    const srcZ = Math.round(z);
+    const nativeZ = srcZ >= 15 ? 15 : srcZ;
+    if (srcZ <= nativeZ) return { z: nativeZ, x: x, y: y };
+    const shift = srcZ - nativeZ;
+    return {
+      z: nativeZ,
+      x: Math.floor(x / Math.pow(2, shift)),
+      y: Math.floor(y / Math.pow(2, shift)),
+    };
   }
 
   function demTileUrl(z, x, y) {
-    const nativeZ = demNativeZoom(z);
-    const layer = nativeZ >= 15 ? "dem5a_png" : "dem_png";
+    const tile = nativeTile(z, x, y);
+    const layer = tile.z >= 15 ? "dem5a_png" : "dem_png";
     return (
       "https://cyberjapandata.gsi.go.jp/xyz/" +
       layer +
       "/" +
-      nativeZ +
+      tile.z +
       "/" +
-      x +
+      tile.x +
       "/" +
-      y +
+      tile.y +
       ".png"
+    );
+  }
+
+  function cloneImageData(imageData) {
+    return new ImageData(
+      new Uint8ClampedArray(imageData.data),
+      imageData.width,
+      imageData.height
     );
   }
 
@@ -243,14 +260,11 @@
         return canvas;
       }
 
-      const img = new Image();
-      img.crossOrigin = "anonymous";
       const ramp = this.ramp;
       const wardGeojson = this.wardGeojson;
-      img.onload = function () {
-        try {
-          ctx.drawImage(img, 0, 0, tileSize, tileSize);
-          const imageData = ctx.getImageData(0, 0, tileSize, tileSize);
+      loadDemTile(coords.z, coords.x, coords.y)
+        .then(function (raw) {
+          const imageData = cloneImageData(raw);
           colorizeImageData(imageData, ramp);
           ctx.putImageData(imageData, 0, 0);
           ctx.save();
@@ -258,14 +272,10 @@
           paintWardMask(ctx, coords, tileSize, wardGeojson);
           ctx.restore();
           done(null, canvas);
-        } catch (err) {
+        })
+        .catch(function (err) {
           done(err, canvas);
-        }
-      };
-      img.onerror = function () {
-        done(null, canvas);
-      };
-      img.src = demTileUrl(coords.z, coords.x, coords.y);
+        });
       return canvas;
     },
   });
@@ -273,25 +283,35 @@
   const demTileCache = new Map();
 
   function loadDemTile(z, x, y) {
-    const key = z + "/" + x + "/" + y;
+    const tile = nativeTile(z, x, y);
+    const key = tile.z + "/" + tile.x + "/" + tile.y;
     if (demTileCache.has(key)) return demTileCache.get(key);
     const promise = new Promise(function (resolve, reject) {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = function () {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0);
-        resolve(ctx.getImageData(0, 0, img.width, img.height));
+        try {
+          const scratch = document.createElement("canvas");
+          scratch.width = img.width;
+          scratch.height = img.height;
+          const scratchCtx = scratch.getContext("2d", {
+            willReadFrequently: true,
+          });
+          scratchCtx.drawImage(img, 0, 0);
+          resolve(scratchCtx.getImageData(0, 0, img.width, img.height));
+        } catch (err) {
+          reject(err);
+        }
       };
       img.onerror = function () {
         reject(new Error("dem tile missing"));
       };
-      img.src = demTileUrl(z, x, y);
+      img.src = demTileUrl(tile.z, tile.x, tile.y);
     });
     demTileCache.set(key, promise);
+    promise.catch(function () {
+      if (demTileCache.get(key) === promise) demTileCache.delete(key);
+    });
     return promise;
   }
 
@@ -357,7 +377,7 @@
     map.getPane("elevation").style.pointerEvents = "none";
 
     L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
-      attribution: GSI_ATTR,
+      attribution: MAP_ATTR,
       minZoom: 12,
       maxZoom: 17,
       maxNativeZoom: 18,
@@ -382,20 +402,21 @@
       interactive: false,
     }).addTo(map);
 
-    map.getContainer()._leaflet_map = map;
+    window.__shinjukuMap = map;
 
     map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
-    if (map.getZoom() < 13) map.setZoom(14);
 
+    let clickSeq = 0;
     map.on("click", async function (event) {
+      const gen = (clickSeq += 1);
       const lon = event.latlng.lng;
       const lat = event.latlng.lat;
       if (!pointInWard(lon, lat, ward)) {
-        showReadout("新宿区の外です", true);
+        if (gen === clickSeq) showReadout("新宿区の外です", true);
         return;
       }
-      const z = demNativeZoom(Math.max(12, Math.min(17, map.getZoom())));
-      const sample = await sampleElevation(lon, lat, z);
+      const sample = await sampleElevation(lon, lat, 15);
+      if (gen !== clickSeq) return;
       if (sample.meters === null) {
         showReadout("標高データがありません", true);
         return;
