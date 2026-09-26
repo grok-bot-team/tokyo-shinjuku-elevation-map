@@ -24,13 +24,13 @@
 
 この節は参照です。手順ではありません。
 
-地図の背景は国土地理院の淡色地図です。標高色は同院の標高タイル（PNG）をブラウザで復号し、5 m から 45 m の色帯に塗ったものです。ズーム 14 以下は `dem_png` をそのズームで使います。15 以上は `dem5a_png` のズーム 15 タイルを拡大します。区界は `data/shinjuku.geojson` に同掲した新宿区ポリゴンです。実行時に GitHub へ取りに行きません。Leaflet・フォントは unpkg と Google Fonts から読みます。
+地図の背景は国土地理院の淡色地図です。標高色は同院の標高タイル（PNG）をブラウザで復号し、5 m から 45 m の色帯に塗ったものです。ズーム 14 以下は `dem_png` をそのズームで使います。15 以上は `dem5a_png` のズーム 15 タイルを拡大します。区界は `data/shinjuku.geojson` に同梱した新宿区ポリゴンです。実行時に GitHub へ取りに行きません。Leaflet・フォントは unpkg と Google Fonts から読みます。
 
 出典：国土地理院, 地理院タイル, 標高タイル（基盤地図情報数値標高モデル）を加工して作成。
 
 - [地理院タイル一覧](https://maps.gsi.go.jp/development/ichiran.html)
 - [国土地理院コンテンツ利用規約](https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html)（地理院タイルは PDL 1.0）
 
-区界は国土数値情報（行政区域データ）（国土交通省）を加工して作成したものです。同掲ファイルの上流は [niiyz/JapanCityGeoJson](https://github.com/niiyz/JapanCityGeoJson) の `geojson/13/13104.json` です。
+区界は国土数値情報（行政区域データ）（国土交通省）を加工して作成したものです。同梱ファイルの上流は [niiyz/JapanCityGeoJson](https://github.com/niiyz/JapanCityGeoJson) の `geojson/13/13104.json` です。
 
 - [国土数値情報 行政区域データ](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-v3_1.html)
