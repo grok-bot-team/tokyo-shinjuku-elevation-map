@@ -365,10 +365,13 @@
   }
 
   async function loadWardGeojson() {
-    const urls = [
-      "data/shinjuku.geojson",
-      "https://cdn.jsdelivr.net/gh/grok-bot-team/tokyo-shinjuku-elevation-map@main/data/shinjuku.geojson",
-    ];
+    const cdn =
+      "https://cdn.jsdelivr.net/gh/grok-bot-team/tokyo-shinjuku-elevation-map@main/data/shinjuku.geojson";
+    const urls = [];
+    if (!/\.github\.io$/i.test(location.hostname)) {
+      urls.push("data/shinjuku.geojson");
+    }
+    urls.push(cdn);
     for (let i = 0; i < urls.length; i += 1) {
       try {
         const response = await fetch(urls[i]);
@@ -438,7 +441,6 @@
       interactive: false,
     }).addTo(map);
 
-    // Playwright / verify-map.py reads this hook.
     window.__shinjukuMap = map;
 
     map.fitBounds(bounds, {
