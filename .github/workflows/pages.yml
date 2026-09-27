@@ -1,42 +1,31 @@
-name: Deploy GitHub Pages
+name: Check static map
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+# This repo cannot enable GitHub Pages (Actions token cannot create the site).
+# The clickable map is https://grok-bot-team.github.io/
 
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Stage static site
+      - name: Required files exist
         run: |
-          mkdir -p _site/data
-          cp index.html app.js styles.css README.md _site/
-          cp data/shinjuku.geojson _site/data/
-          touch _site/.nojekyll
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+          set -euo pipefail
+          test -s index.html
+          test -s app.js
+          test -s styles.css
+          test -s data/shinjuku.geojson
+          grep -q "新宿区の高低差" index.html
+          grep -q "dem5a_png" app.js
+      - name: Public host still serves HTTPS
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/body.html -w "%{http_code}" --max-time 30 https://grok-bot-team.github.io/)
+          test "$code" = "200"
+          grep -q "新宿区の高低差" /tmp/body.html
