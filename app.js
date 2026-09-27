@@ -11,10 +11,12 @@
     ],
   };
 
-  const MAP_ATTR =
+  const GSI_BASE_ATTR =
     '<a href="https://maps.gsi.go.jp/development/ichiran.html">出典：国土地理院</a>, ' +
-    '<a href="https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html">地理院タイル</a>, ' +
-    "標高タイル（基盤地図情報数値標高モデル）を加工して作成 | " +
+    '<a href="https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html">地理院タイル</a>（淡色地図）';
+  const GSI_DEM_ATTR =
+    "地理院タイル（標高タイル（基盤地図情報数値標高モデル））を加工して作成";
+  const MLIT_ATTR =
     '<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-v3_1.html">国土数値情報（行政区域データ）</a>（国土交通省）を加工して作成';
 
   function decodeDemPixel(r, g, b) {
@@ -66,13 +68,14 @@
     return "linear-gradient(90deg, " + parts.join(", ") + ")";
   }
 
+  const DEM_NATIVE_Z = 15;
+
   function nativeTile(z, x, y) {
     const srcZ = Math.round(z);
-    const nativeZ = srcZ >= 15 ? 15 : srcZ;
-    if (srcZ <= nativeZ) return { z: nativeZ, x: x, y: y };
-    const shift = srcZ - nativeZ;
+    if (srcZ <= DEM_NATIVE_Z) return { z: DEM_NATIVE_Z, x: x, y: y };
+    const shift = srcZ - DEM_NATIVE_Z;
     return {
-      z: nativeZ,
+      z: DEM_NATIVE_Z,
       x: Math.floor(x / Math.pow(2, shift)),
       y: Math.floor(y / Math.pow(2, shift)),
     };
@@ -80,11 +83,8 @@
 
   function demTileUrl(z, x, y) {
     const tile = nativeTile(z, x, y);
-    const layer = tile.z >= 15 ? "dem5a_png" : "dem_png";
     return (
-      "https://cyberjapandata.gsi.go.jp/xyz/" +
-      layer +
-      "/" +
+      "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/" +
       tile.z +
       "/" +
       tile.x +
@@ -120,13 +120,26 @@
     return { minLon: minLon, minLat: minLat, maxLon: maxLon, maxLat: maxLat };
   }
 
+  function geometriesOf(geojson) {
+    if (geojson.type === "FeatureCollection") {
+      return geojson.features.map(function (feature) {
+        return feature.geometry;
+      });
+    }
+    if (geojson.type === "Feature") return [geojson.geometry];
+    return [geojson];
+  }
+
   function walkRings(geojson, visit) {
-    const geom = geojson.features[0].geometry;
-    const polygons =
-      geom.type === "MultiPolygon" ? geom.coordinates : [geom.coordinates];
-    for (let p = 0; p < polygons.length; p += 1) {
-      for (let r = 0; r < polygons[p].length; r += 1) {
-        visit(polygons[p][r], r === 0, p);
+    const geoms = geometriesOf(geojson);
+    for (let g = 0; g < geoms.length; g += 1) {
+      const geom = geoms[g];
+      const polygons =
+        geom.type === "MultiPolygon" ? geom.coordinates : [geom.coordinates];
+      for (let p = 0; p < polygons.length; p += 1) {
+        for (let r = 0; r < polygons[p].length; r += 1) {
+          visit(polygons[p][r], r === 0, p);
+        }
       }
     }
   }
@@ -147,20 +160,23 @@
   }
 
   function pointInWard(lon, lat, geojson) {
-    const geom = geojson.features[0].geometry;
-    const polygons =
-      geom.type === "MultiPolygon" ? geom.coordinates : [geom.coordinates];
-    for (let p = 0; p < polygons.length; p += 1) {
-      const rings = polygons[p];
-      if (!pointInRing(lon, lat, rings[0])) continue;
-      let hole = false;
-      for (let r = 1; r < rings.length; r += 1) {
-        if (pointInRing(lon, lat, rings[r])) {
-          hole = true;
-          break;
+    const geoms = geometriesOf(geojson);
+    for (let g = 0; g < geoms.length; g += 1) {
+      const geom = geoms[g];
+      const polygons =
+        geom.type === "MultiPolygon" ? geom.coordinates : [geom.coordinates];
+      for (let p = 0; p < polygons.length; p += 1) {
+        const rings = polygons[p];
+        if (!pointInRing(lon, lat, rings[0])) continue;
+        let hole = false;
+        for (let r = 1; r < rings.length; r += 1) {
+          if (pointInRing(lon, lat, rings[r])) {
+            hole = true;
+            break;
+          }
         }
+        if (!hole) return true;
       }
-      if (!hole) return true;
     }
     return false;
   }
@@ -320,7 +336,10 @@
     const pixel = lonLatToTilePixel(lon, lat, z, 256);
     try {
       const imageData = await loadDemTile(pixel.z, pixel.x, pixel.y);
-      const i = (pixel.py * imageData.width + pixel.px) * 4;
+      const width = imageData.width;
+      const px = Math.min(pixel.px, width - 1);
+      const py = Math.min(pixel.py, imageData.height - 1);
+      const i = (py * width + px) * 4;
       sample.meters = decodeDemPixel(
         imageData.data[i],
         imageData.data[i + 1],
@@ -373,26 +392,27 @@
 
     map.createPane("elevation");
     map.getPane("elevation").style.zIndex = 350;
-    map.getPane("elevation").style.mixBlendMode = "multiply";
     map.getPane("elevation").style.pointerEvents = "none";
 
     L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
-      attribution: MAP_ATTR,
+      attribution: GSI_BASE_ATTR,
       minZoom: 12,
       maxZoom: 17,
-      maxNativeZoom: 18,
     }).addTo(map);
 
     new ElevationColorLayer(COLOR_RAMP, ward, {
       pane: "elevation",
+      attribution: GSI_DEM_ATTR,
       tileSize: 256,
       minZoom: 12,
       maxZoom: 17,
-      maxNativeZoom: 15,
-      opacity: 1,
+      minNativeZoom: DEM_NATIVE_Z,
+      maxNativeZoom: DEM_NATIVE_Z,
+      opacity: 0.82,
     }).addTo(map);
 
     L.geoJSON(ward, {
+      attribution: MLIT_ATTR,
       style: {
         color: "#1b2a22",
         weight: 1.4,
@@ -402,25 +422,55 @@
       interactive: false,
     }).addTo(map);
 
+    // Playwright / verify-map.py reads this hook.
     window.__shinjukuMap = map;
 
     map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
 
     let clickSeq = 0;
+    let pin = null;
+
+    function placePin(latlng) {
+      if (pin) {
+        pin.setLatLng(latlng);
+        window.__shinjukuPin = pin;
+        return;
+      }
+      pin = L.circleMarker(latlng, {
+        radius: 6,
+        color: "#1b2a22",
+        weight: 1.5,
+        fillColor: "#f7f1e6",
+        fillOpacity: 1,
+        interactive: false,
+      }).addTo(map);
+      window.__shinjukuPin = pin;
+    }
+
+    function clearPin() {
+      if (!pin) return;
+      map.removeLayer(pin);
+      pin = null;
+      window.__shinjukuPin = null;
+    }
+
     map.on("click", async function (event) {
       const gen = (clickSeq += 1);
       const lon = event.latlng.lng;
       const lat = event.latlng.lat;
       if (!pointInWard(lon, lat, ward)) {
-        if (gen === clickSeq) showReadout("新宿区の外です", true);
+        clearPin();
+        showReadout("新宿区の外です", true);
         return;
       }
-      const sample = await sampleElevation(lon, lat, 15);
+      const sample = await sampleElevation(lon, lat, DEM_NATIVE_Z);
       if (gen !== clickSeq) return;
       if (sample.meters === null) {
+        clearPin();
         showReadout("標高データがありません", true);
         return;
       }
+      placePin(event.latlng);
       showReadout(sample.meters.toFixed(1) + " m", false);
     });
   }
