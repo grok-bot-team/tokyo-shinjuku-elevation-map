@@ -364,16 +364,31 @@
     el.classList.toggle("is-empty", Boolean(empty));
   }
 
+  async function loadWardGeojson() {
+    const urls = [
+      "data/shinjuku.geojson",
+      "https://cdn.jsdelivr.net/gh/grok-bot-team/tokyo-shinjuku-elevation-map@main/data/shinjuku.geojson",
+    ];
+    for (let i = 0; i < urls.length; i += 1) {
+      try {
+        const response = await fetch(urls[i]);
+        if (response.ok) return await response.json();
+      } catch (err) {
+        /* try the next URL */
+      }
+    }
+    return null;
+  }
+
   async function start() {
     paintLegend(COLOR_RAMP);
     showReadout("", true);
 
-    const response = await fetch("data/shinjuku.geojson");
-    if (!response.ok) {
+    const ward = await loadWardGeojson();
+    if (!ward) {
       showReadout("区界データを読めませんでした", true);
       return;
     }
-    const ward = await response.json();
     const bbox = boundsOf(ward);
     const bounds = L.latLngBounds(
       [bbox.minLat, bbox.minLon],
@@ -423,6 +438,7 @@
       interactive: false,
     }).addTo(map);
 
+    // Playwright / verify-map.py reads this hook.
     window.__shinjukuMap = map;
 
     map.fitBounds(bounds, {

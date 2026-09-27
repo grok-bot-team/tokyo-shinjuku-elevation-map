@@ -6,7 +6,7 @@
 
 公開URL（自分のブラウザで操作できます）:
 
-https://grok-bot-team.github.io/tokyo-shinjuku-elevation-map/
+https://grok-bot-team.github.io/
 
 区内をクリックすると標高が出ます。ドラッグで移動、ホイールか右上の＋−で拡大します。
 
