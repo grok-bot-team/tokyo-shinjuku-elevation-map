@@ -389,6 +389,7 @@
       maxBounds: bounds.pad(0.45),
       maxBoundsViscosity: 0.85,
     });
+    map.zoomControl.setPosition("topright");
 
     map.createPane("elevation");
     map.getPane("elevation").style.zIndex = 350;
@@ -422,10 +423,13 @@
       interactive: false,
     }).addTo(map);
 
-    // Playwright / verify-map.py reads this hook.
     window.__shinjukuMap = map;
 
-    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
+    map.fitBounds(bounds, {
+      paddingTopLeft: [380, 28],
+      paddingBottomRight: [28, 28],
+      maxZoom: 14,
+    });
 
     let clickSeq = 0;
     let pin = null;
